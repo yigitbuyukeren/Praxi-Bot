@@ -74,15 +74,18 @@ export function MessageInfo({
     };
   }, [open, side, runId, usage, client]);
 
+  const reply = side === "bot" ? replyFacts(run, runDto, usage, computer) : null;
   const rows: InfoRow[] =
-    side === "bot"
-      ? replyInfoRows(replyFacts(run, runDto, usage, computer), i18n.language, {
+    reply !== null
+      ? replyInfoRows(reply, i18n.language, {
           s: t("messageInfo.unit.s"),
           m: t("messageInfo.unit.m"),
           steps: (n) => t("messageInfo.steps", { count: n })
         })
       : userInfoRows(ts, source, i18n.language, (k: MessageSourceKind) => t(`messageInfo.sources.${k}`));
-  if (side === "bot" && rows.length === 0 && !usage) {
+  // A bot reply without a run has no start/finish facts; show the message time
+  // instead. Usage loading must not make this row appear or disappear.
+  if (reply !== null && reply.startedMs === undefined && reply.finishedMs === undefined) {
     rows.push(...userInfoRows(ts, null, i18n.language, () => "").map((r) => ({ ...r, key: "finished" as const })));
   }
   if (side === "bot" && source) {
